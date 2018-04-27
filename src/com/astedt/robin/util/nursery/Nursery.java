@@ -12,9 +12,17 @@ public class Nursery {
     private final AtomicReference<Task> exceptionRaisedByTask;
     private final AtomicBoolean alive;
     private final AtomicInteger unnamedTasks;
+    private final String nurseryId;
+
+    private final static AtomicInteger unnamedNurseries = new AtomicInteger(0);
 
     public static void with(NurseryScope scope) {
-        final Nursery nursery = new Nursery();
+        final String nurseryId = "<unnamed nursery id="+unnamedNurseries.getAndIncrement()+">";
+        with(nurseryId, scope);
+    }
+
+    public static void with(String nurseryId, NurseryScope scope) {
+        final Nursery nursery = new Nursery(nurseryId);
         try {
             scope.runBlock(nursery);
             while (!nursery.childThreads.empty()) {
@@ -36,7 +44,8 @@ public class Nursery {
         }
     }
 
-    private Nursery() {
+    private Nursery(String nurseryId) {
+        this.nurseryId = nurseryId;
         alive = new AtomicBoolean(true);
         childThreads = new Stack<>();
         currentThread = Thread.currentThread();
@@ -45,15 +54,15 @@ public class Nursery {
     }
 
     public synchronized void startSoon(Runnable child) {
-        final String id = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
-        startSoon(child, id);
+        final String taskId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
+        startSoon(child, taskId);
     }
 
-    public synchronized void startSoon(Runnable child, String id) {
+    public synchronized void startSoon(Runnable child, String taskId) {
         if (!alive.get()) {
             throw new NurseryInvokedOutOfScopeException();
         }
-        Task task = new Task(child, id);
+        Task task = new Task(child, taskId);
         Thread thread = new Thread(task);
         childThreads.push(thread);
         thread.start();
@@ -62,13 +71,13 @@ public class Nursery {
     class Task implements Runnable {
 
         private final Runnable child;
-        private final String id;
+        private final String taskId;
         private Exception exception = null;
         private Thread thread = null;
 
         public Task(Runnable child, String id) {
             this.child = child;
-            this.id = id;
+            this.taskId = id;
         }
 
         public Exception getException() {
@@ -82,8 +91,9 @@ public class Nursery {
         @Override
         public void run() {
             try {
+                final String threadName = "Nursery[nursery="+nurseryId+", task="+taskId+"]";
                 thread = Thread.currentThread();
-                thread.setName("Nursery-child(" + id + ")");
+                thread.setName(threadName);
                 child.run();
             } catch (Exception e) {
                 exception = e;
