@@ -3,7 +3,7 @@ package com.astedt.robin.util.nursery;
 class NurseryPropagatedException extends IllegalThreadStateException {
     private static final int META_DATA_TRACE_LINES = 1;
     private static final int ORIGINAL_TRACE_SUPPRESS_COUNT = 2;
-    private static final int CURRENT_TRACE_SUPPRESS_COUNT = 1;
+    private static final int CURRENT_TRACE_SUPPRESS_COUNT = 2;
 
 
     public NurseryPropagatedException(Nursery.Task task) {
@@ -30,7 +30,7 @@ class NurseryPropagatedException extends IllegalThreadStateException {
                 META_DATA_TRACE_LINES,
                 oldStack.length - ORIGINAL_TRACE_SUPPRESS_COUNT);
 
-        // Suppress everything but the call to com.astedt.robin.util.nursery.Nursery.with(), for readability
+        // Suppress everything but the call to with(), for readability
         System.arraycopy(
                 currentStack,
                 CURRENT_TRACE_SUPPRESS_COUNT,

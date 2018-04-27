@@ -18,10 +18,14 @@ public class Nursery {
 
     public static void with(NurseryScope scope) {
         final String nurseryId = "<unnamed nursery id="+unnamedNurseries.getAndIncrement()+">";
-        with(nurseryId, scope);
+        internalWith(nurseryId, scope);
     }
 
     public static void with(String nurseryId, NurseryScope scope) {
+        internalWith(nurseryId, scope);
+    }
+
+    private static void internalWith(String nurseryId, NurseryScope scope) {
         final Nursery nursery = new Nursery(nurseryId);
         try {
             scope.runBlock(nursery);
