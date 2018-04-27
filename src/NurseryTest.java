@@ -2,6 +2,12 @@ import com.astedt.robin.util.nursery.Nursery;
 
 public class NurseryTest {
     public static void main(String[] args) {
+
+        Nursery.with((Nursery nursery) -> {
+            nursery.startSoon(() -> System.out.println("Inline test 1"));
+            nursery.startSoon(() -> System.out.println("Inline test 2"));
+        });
+
         Nursery.with((Nursery nursery) -> {
             nursery.startSoon(NurseryTest::test1, "test 1");
             nursery.startSoon(NurseryTest::test2, "test 2");
