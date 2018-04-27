@@ -4,7 +4,7 @@ public class NurseryTest {
     public static void main(String[] args) {
         Nursery.with((Nursery nursery) -> {
             nursery.startSoon(NurseryTest::test1, "test 1");
-            nursery.startSoon(NurseryTest::test2);
+            nursery.startSoon(NurseryTest::test2, "test 2");
         });
     }
 
