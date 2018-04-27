@@ -58,15 +58,15 @@ public class Nursery {
     }
 
     public synchronized void startSoon(Runnable child) {
-        final String taskId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
-        startSoon(child, taskId);
+        final String childId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
+        startSoon(child, childId);
     }
 
-    public synchronized void startSoon(Runnable child, String taskId) {
+    public synchronized void startSoon(Runnable child, String childId) {
         if (!alive.get()) {
             throw new NurseryInvokedOutOfScopeException();
         }
-        Task task = new Task(child, taskId);
+        Task task = new Task(child, childId);
         Thread thread = new Thread(task);
         childThreads.push(thread);
         thread.start();
@@ -75,13 +75,13 @@ public class Nursery {
     class Task implements Runnable {
 
         private final Runnable child;
-        private final String taskId;
+        private final String childId;
         private Exception exception = null;
         private Thread thread = null;
 
-        public Task(Runnable child, String id) {
+        public Task(Runnable child, String childId) {
             this.child = child;
-            this.taskId = id;
+            this.childId = childId;
         }
 
         public Exception getException() {
@@ -95,7 +95,7 @@ public class Nursery {
         @Override
         public void run() {
             try {
-                final String threadName = "Nursery[nursery="+nurseryId+", task="+taskId+"]";
+                final String threadName = "Nursery[nursery="+nurseryId+", child="+childId+"]";
                 thread = Thread.currentThread();
                 thread.setName(threadName);
                 child.run();
