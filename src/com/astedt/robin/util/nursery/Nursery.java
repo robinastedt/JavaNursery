@@ -75,7 +75,7 @@ public class Nursery {
         public void run() {
             try {
                 thread = Thread.currentThread();
-                thread.setName("com.astedt.robin.util.nursery.Nursery-child(" + id + ")");
+                thread.setName("Nursery-child(" + id + ")");
                 child.run();
             } catch (Exception e) {
                 exception = e;
