@@ -2,6 +2,7 @@ package com.astedt.robin.util.nursery;
 
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Nursery {
@@ -10,6 +11,7 @@ public class Nursery {
     private final Thread currentThread;
     private final AtomicReference<Task> exceptionRaisedByTask;
     private final AtomicBoolean alive;
+    private final AtomicInteger unnamedTasks;
 
     public static void with(NurseryScope scope) {
         final Nursery nursery = new Nursery();
@@ -39,6 +41,12 @@ public class Nursery {
         childThreads = new Stack<>();
         currentThread = Thread.currentThread();
         exceptionRaisedByTask = new AtomicReference<>(null);
+        unnamedTasks = new AtomicInteger(0);
+    }
+
+    public synchronized void startSoon(Runnable child) {
+        final String id = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
+        startSoon(child, id);
     }
 
     public synchronized void startSoon(Runnable child, String id) {
