@@ -1,4 +1,4 @@
-public class NurseryPropagatedException extends IllegalThreadStateException {
+class NurseryPropagatedException extends IllegalThreadStateException {
     private static final int META_DATA_TRACE_LINES = 1;
     private static final int ORIGINAL_TRACE_SUPPRESS_COUNT = 2;
     private static final int CURRENT_TRACE_SUPPRESS_COUNT = 1;
