@@ -1,3 +1,4 @@
+package com.astedt.robin.util.nursery;
 
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,7 +75,7 @@ public class Nursery {
         public void run() {
             try {
                 thread = Thread.currentThread();
-                thread.setName("Nursery-child(" + id + ")");
+                thread.setName("com.astedt.robin.util.nursery.Nursery-child(" + id + ")");
                 child.run();
             } catch (Exception e) {
                 exception = e;
