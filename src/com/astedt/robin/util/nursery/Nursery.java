@@ -1,6 +1,7 @@
 package com.astedt.robin.util.nursery;
 
 import java.util.Stack;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -8,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Nursery {
 
     private final Stack<Thread> childThreads;
+    private final Semaphore childAccessSemaphore;
     private final Thread nurseryThread;
     private final AtomicReference<Task> exceptionRaisedByTask;
     private final AtomicBoolean alive;
@@ -30,13 +32,21 @@ public class Nursery {
         try {
             scope.runBlock(nursery);
             while (!nursery.childThreads.empty()) {
+                nursery.childAccessSemaphore.acquire();
                 Thread thread = nursery.childThreads.pop();
+                nursery.childAccessSemaphore.release();
                 thread.join();
             }
         } catch (InterruptedException e) {
             nursery.alive.set(false);
             while (!nursery.childThreads.empty()) {
+                try {
+                    nursery.childAccessSemaphore.acquire();
+                } catch (InterruptedException e1) {
+                    continue;
+                }
                 Thread thread = nursery.childThreads.pop();
+                nursery.childAccessSemaphore.release();
                 thread.interrupt();
             }
         } finally {
@@ -52,23 +62,30 @@ public class Nursery {
         this.nurseryId = nurseryId;
         alive = new AtomicBoolean(true);
         childThreads = new Stack<>();
+        childAccessSemaphore = new Semaphore(1);
         nurseryThread = Thread.currentThread();
         exceptionRaisedByTask = new AtomicReference<>(null);
         unnamedTasks = new AtomicInteger(0);
     }
 
-    public synchronized void startSoon(Runnable child) {
+    public void startSoon(Runnable child) {
         final String childId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
         startSoon(child, childId);
     }
 
-    public synchronized void startSoon(Runnable child, String childId) {
+    public void startSoon(Runnable child, String childId) {
+        Task task = new Task(child, childId);
+        Thread thread = new Thread(task);
+        try {
+            childAccessSemaphore.acquire();
+        } catch (InterruptedException e) {
+            return;
+        }
         if (!alive.get()) {
             throw new NurseryInvokedOutOfScopeException();
         }
-        Task task = new Task(child, childId);
-        Thread thread = new Thread(task);
         childThreads.push(thread);
+        childAccessSemaphore.release();
         thread.start();
     }
 
