@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Nursery {
 
     private final Stack<Thread> childThreads;
-    private final Thread currentThread;
+    private final Thread nurseryThread;
     private final AtomicReference<Task> exceptionRaisedByTask;
     private final AtomicBoolean alive;
     private final AtomicInteger unnamedTasks;
@@ -52,7 +52,7 @@ public class Nursery {
         this.nurseryId = nurseryId;
         alive = new AtomicBoolean(true);
         childThreads = new Stack<>();
-        currentThread = Thread.currentThread();
+        nurseryThread = Thread.currentThread();
         exceptionRaisedByTask = new AtomicReference<>(null);
         unnamedTasks = new AtomicInteger(0);
     }
@@ -102,7 +102,7 @@ public class Nursery {
             } catch (Exception e) {
                 exception = e;
                 if (exceptionRaisedByTask.compareAndSet(null, this)) {
-                    currentThread.interrupt();
+                    nurseryThread.interrupt();
                 }
             }
         }
