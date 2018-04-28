@@ -85,8 +85,8 @@ public class Nursery {
             throw new NurseryInvokedOutOfScopeException();
         }
         childThreads.push(thread);
-        childAccessSemaphore.release();
         thread.start();
+        childAccessSemaphore.release();
     }
 
     class Task implements Runnable {
