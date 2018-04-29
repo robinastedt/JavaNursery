@@ -28,6 +28,16 @@ public class NurseryTest {
             return result1.get() + result2.get();
         });
         System.out.println(result);
+
+
+        // An example of one or more threads failing
+        Nursery.open((Nursery nursery) -> {
+            nursery.start(NurseryTest::exceptionThrower);
+            nursery.start(NurseryTest::exceptionThrower);
+            nursery.start(NurseryTest::exceptionThrower);
+            nursery.start(NurseryTest::exceptionThrower);
+            nursery.start(NurseryTest::exceptionThrower);
+        });
     }
 
     private static int intSupplier() {
@@ -42,5 +52,14 @@ public class NurseryTest {
             }
         }
         return result; // Returns 499500
+    }
+
+    private static void exceptionThrower() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            return;
+        }
+        throw new NullPointerException();
     }
 }

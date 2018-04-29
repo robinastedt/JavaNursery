@@ -90,19 +90,30 @@ public class Nursery {
     }
 
     public void start(Runnable child) {
-        start(() -> {child.run(); return null;});
+        internalStart(getVoidSupplier(child), getUnnamedTaskId());
     }
 
     public void start(Runnable child, String childId) {
-        start(() -> {child.run(); return null;}, childId);
+        internalStart(getVoidSupplier(child), childId);
     }
 
     public <T> AsynchronousReference<T> start(Supplier<T> child) {
-        final String childId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
-        return start(child, childId);
+        return internalStart(child, getUnnamedTaskId());
     }
 
     public <T> AsynchronousReference<T> start(Supplier<T> child, String childId) {
+        return internalStart(child, childId);
+    }
+
+    private static Supplier<Void> getVoidSupplier(Runnable runnable) {
+        return () -> {runnable.run(); return null;};
+    }
+
+    private String getUnnamedTaskId() {
+        return "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
+    }
+
+    private <T> AsynchronousReference<T> internalStart(Supplier<T> child, String childId) {
         Task task = new Task(child, childId);
         Thread thread = new Thread(task);
         try {
