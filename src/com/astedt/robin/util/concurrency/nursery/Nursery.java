@@ -1,10 +1,13 @@
-package com.astedt.robin.util.nursery;
+package com.astedt.robin.util.concurrency.nursery;
+
+import com.astedt.robin.util.concurrency.AsynchronousReference;
 
 import java.util.Stack;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 public class Nursery {
 
@@ -69,17 +72,25 @@ public class Nursery {
     }
 
     public void startSoon(Runnable child) {
-        final String childId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
-        startSoon(child, childId);
+        startSoon(() -> {child.run(); return null;});
     }
 
     public void startSoon(Runnable child, String childId) {
+        startSoon(() -> {child.run(); return null;}, childId);
+    }
+
+    public <T> AsynchronousReference<T> startSoon(Supplier<T> child) {
+        final String childId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
+        return startSoon(child, childId);
+    }
+
+    public <T> AsynchronousReference<T> startSoon(Supplier<T> child, String childId) {
         Task task = new Task(child, childId);
         Thread thread = new Thread(task);
         try {
             childAccessSemaphore.acquire();
         } catch (InterruptedException e) {
-            return;
+            return null;
         }
         if (!alive.get()) {
             throw new NurseryInvokedOutOfScopeException();
@@ -87,18 +98,23 @@ public class Nursery {
         childThreads.push(thread);
         thread.start();
         childAccessSemaphore.release();
+        return task.getResult();
     }
 
-    class Task implements Runnable {
 
-        private final Runnable child;
+
+    class Task<T> implements Runnable {
+
+        private final Supplier<T> child;
         private final String childId;
         private Exception exception = null;
         private Thread thread = null;
+        private AsynchronousReference<T> result;
 
-        public Task(Runnable child, String childId) {
+        public Task(Supplier<T> child, String childId) {
             this.child = child;
             this.childId = childId;
+            result = new AsynchronousReference<>();
         }
 
         public Exception getException() {
@@ -109,13 +125,17 @@ public class Nursery {
             return thread;
         }
 
+        public AsynchronousReference<T> getResult() {
+            return result;
+        }
+
         @Override
         public void run() {
             try {
                 final String threadName = "Nursery[nursery="+nurseryId+", child="+childId+"]";
                 thread = Thread.currentThread();
                 thread.setName(threadName);
-                child.run();
+                result.set(child.get());
             } catch (Exception e) {
                 exception = e;
                 if (exceptionRaisedByTask.compareAndSet(null, this)) {

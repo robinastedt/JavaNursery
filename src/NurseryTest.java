@@ -1,4 +1,5 @@
-import com.astedt.robin.util.nursery.Nursery;
+import com.astedt.robin.util.concurrency.AsynchronousReference;
+import com.astedt.robin.util.concurrency.nursery.Nursery;
 
 public class NurseryTest {
     public static void main(String[] args) {
@@ -17,32 +18,26 @@ public class NurseryTest {
         });
 
         Nursery.with((Nursery nursery) -> {
-            nursery.startSoon(NurseryTest::test1, "test 1");
-            nursery.startSoon(NurseryTest::test2, "test 2");
+            AsynchronousReference<Integer> result1 = nursery.startSoon(NurseryTest::intSupplier);
+            AsynchronousReference<Integer> result2 = nursery.startSoon(NurseryTest::intSupplier);
+
+            // The result of the children can not be accessed until it's finished.
+            // The get function of the AsynchronousReference blocks until the result becomes available
+            System.out.println(result1.get() + result2.get()); // Returns 999000
         });
     }
 
-    private static void test1() {
-        for (int i = 0; i < 10; i++) {
-            System.out.println("Exception test 1: " + i);
+    private static int intSupplier() {
+        int result = 0;
+        for (int i = 0; i < 1000; i++) {
+            result += i;
             try {
-                Thread.sleep(10);
+                Thread.sleep(1); // The illusion of working hard
             } catch (InterruptedException e) {
-                break;
+                e.printStackTrace();
+                return -1;
             }
         }
-    }
-    private static void test2() {
-        for (int i = 0; i < 10; i++) {
-            if (i == 5) {
-                throw new NullPointerException();
-            }
-            System.out.println("Exception test 2: " + i);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
+        return result; // Returns 499500
     }
 }

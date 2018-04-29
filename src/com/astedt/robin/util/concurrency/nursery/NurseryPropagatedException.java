@@ -1,4 +1,4 @@
-package com.astedt.robin.util.nursery;
+package com.astedt.robin.util.concurrency.nursery;
 
 class NurseryPropagatedException extends IllegalThreadStateException {
     private static final int META_DATA_TRACE_LINES = 1;

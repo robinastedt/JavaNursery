@@ -1,4 +1,4 @@
-package com.astedt.robin.util.nursery;
+package com.astedt.robin.util.concurrency.nursery;
 
 class NurseryInvokedOutOfScopeException extends IllegalThreadStateException {
     public NurseryInvokedOutOfScopeException() {
