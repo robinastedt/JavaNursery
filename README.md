@@ -12,6 +12,8 @@ To be able to use any results of the child threads non-statically a child thread
 import com.astedt.robin.util.concurrency.AsynchronousReference;
 import com.astedt.robin.util.concurrency.nursery.Nursery;
 
+import java.util.Random;
+
 public class NurseryTest {
     public static void main(String[] args) {
 
@@ -39,6 +41,20 @@ public class NurseryTest {
             return result1.get() + result2.get();
         });
         System.out.println(result);
+
+
+        // An example of one or more threads failing
+        try {
+            Nursery.open((Nursery nursery) -> {
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static int intSupplier() {
@@ -48,11 +64,19 @@ public class NurseryTest {
             try {
                 Thread.sleep(1); // The illusion of working hard
             } catch (InterruptedException e) {
-                e.printStackTrace();
                 return -1;
             }
         }
         return result; // Returns 499500
+    }
+
+    private static void exceptionThrower() {
+        try {
+            Thread.sleep(new Random().nextInt(2000));
+        } catch (InterruptedException e) {
+            return;
+        }
+        throw new NullPointerException();
     }
 }
 ```
