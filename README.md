@@ -13,27 +13,30 @@ import com.astedt.robin.util.concurrency.nursery.Nursery;
 public class NurseryTest {
     public static void main(String[] args) {
 
-        Nursery.with((Nursery nursery) -> {
-            nursery.startSoon(() -> System.out.println("Inline test 1"));
-            nursery.startSoon(() -> System.out.println("Inline test 2"));
+        Nursery.open((Nursery nursery) -> {
+            nursery.start(() -> System.out.println("Inline test 1"));
+            nursery.start(() -> System.out.println("Inline test 2"));
         });
 
-        Nursery.with((Nursery nursery) -> {
-            nursery.startSoon(() -> {
-                nursery.startSoon(() -> System.out.println("Nested scopes test 1"));
-                nursery.startSoon(() -> System.out.println("Nested scopes test 2"));
+        Nursery.open((Nursery nursery) -> {
+            nursery.start(() -> {
+                nursery.start(() -> System.out.println("Nested scopes test 1"));
+                nursery.start(() -> System.out.println("Nested scopes test 2"));
             });
-            nursery.startSoon(() -> System.out.println("Nested scopes test 3"));
+            nursery.start(() -> System.out.println("Nested scopes test 3"));
         });
 
-        Nursery.with((Nursery nursery) -> {
-            AsynchronousReference<Integer> result1 = nursery.startSoon(NurseryTest::intSupplier);
-            AsynchronousReference<Integer> result2 = nursery.startSoon(NurseryTest::intSupplier);
+        // A Nursery can also store results from children, and then work on them asynchronously
+        // If there's some result to be returned within the scope, it is also passed on as a result of the scope itself.
+        int result = Nursery.open((Nursery nursery) -> {
+            AsynchronousReference<Integer> result1 = nursery.start(NurseryTest::intSupplier);
+            AsynchronousReference<Integer> result2 = nursery.start(NurseryTest::intSupplier);
 
             // The result of the children can not be accessed until it's finished.
             // The get function of the AsynchronousReference blocks until the result becomes available
-            System.out.println(result1.get() + result2.get()); // Returns 999000
+            return result1.get() + result2.get();
         });
+        System.out.println(result);
     }
 
     private static int intSupplier() {
