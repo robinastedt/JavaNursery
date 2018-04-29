@@ -30,7 +30,7 @@ class NurseryPropagatedException extends IllegalThreadStateException {
                 META_DATA_TRACE_LINES,
                 oldStack.length - ORIGINAL_TRACE_SUPPRESS_COUNT);
 
-        // Suppress everything but the call to with(), for readability
+        // Suppress everything but the call to open(), for readability
         System.arraycopy(
                 currentStack,
                 CURRENT_TRACE_SUPPRESS_COUNT,

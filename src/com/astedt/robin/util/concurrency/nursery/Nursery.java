@@ -21,19 +21,35 @@ public class Nursery {
 
     private final static AtomicInteger unnamedNurseries = new AtomicInteger(0);
 
-    public static void with(NurseryScope scope) {
-        final String nurseryId = "<unnamed nursery id="+unnamedNurseries.getAndIncrement()+">";
-        internalWith(nurseryId, scope);
+    public static void open(NurseryScope scope) {
+        internalOpen(getUnnamedNurseryId(), convertToSupplier(scope));
     }
 
-    public static void with(String nurseryId, NurseryScope scope) {
-        internalWith(nurseryId, scope);
+    public static void open(String nurseryId, NurseryScope scope) {
+        internalOpen(nurseryId, convertToSupplier(scope));
     }
 
-    private static void internalWith(String nurseryId, NurseryScope scope) {
+    public static <T> T open(NurseryScopeSupplier<T> scope) {
+        return internalOpen(getUnnamedNurseryId(), scope);
+    }
+
+    public static <T> T open(String nurseryId, NurseryScopeSupplier<T> scope) {
+        return internalOpen(nurseryId, scope);
+    }
+
+    private static <T> NurseryScopeSupplier<T> convertToSupplier(NurseryScope scope) {
+        return (Nursery nursery) -> {scope.runBlock(nursery); return null;};
+    }
+
+    private static String getUnnamedNurseryId() {
+        return "<unnamed nursery id="+unnamedNurseries.getAndIncrement()+">";
+    }
+
+    private static <T> T internalOpen(String nurseryId, NurseryScopeSupplier<T> scope) {
+        T result = null;
         final Nursery nursery = new Nursery(nurseryId);
         try {
-            scope.runBlock(nursery);
+            result = scope.runBlock(nursery);
             while (!nursery.childThreads.empty()) {
                 nursery.childAccessSemaphore.acquire();
                 Thread thread = nursery.childThreads.pop();
@@ -59,7 +75,9 @@ public class Nursery {
         if (nursery.exceptionRaisedByTask.get() != null) {
             throw new NurseryPropagatedException(nursery.exceptionRaisedByTask.get());
         }
+        return result;
     }
+
 
     private Nursery(String nurseryId) {
         this.nurseryId = nurseryId;
@@ -71,20 +89,20 @@ public class Nursery {
         unnamedTasks = new AtomicInteger(0);
     }
 
-    public void startSoon(Runnable child) {
-        startSoon(() -> {child.run(); return null;});
+    public void start(Runnable child) {
+        start(() -> {child.run(); return null;});
     }
 
-    public void startSoon(Runnable child, String childId) {
-        startSoon(() -> {child.run(); return null;}, childId);
+    public void start(Runnable child, String childId) {
+        start(() -> {child.run(); return null;}, childId);
     }
 
-    public <T> AsynchronousReference<T> startSoon(Supplier<T> child) {
+    public <T> AsynchronousReference<T> start(Supplier<T> child) {
         final String childId = "<unnamed task id="+unnamedTasks.getAndIncrement()+">";
-        return startSoon(child, childId);
+        return start(child, childId);
     }
 
-    public <T> AsynchronousReference<T> startSoon(Supplier<T> child, String childId) {
+    public <T> AsynchronousReference<T> start(Supplier<T> child, String childId) {
         Task task = new Task(child, childId);
         Thread thread = new Thread(task);
         try {
