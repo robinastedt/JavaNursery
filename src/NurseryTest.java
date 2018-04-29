@@ -1,6 +1,8 @@
 import com.astedt.robin.util.concurrency.AsynchronousReference;
 import com.astedt.robin.util.concurrency.nursery.Nursery;
 
+import java.util.Random;
+
 public class NurseryTest {
     public static void main(String[] args) {
 
@@ -31,13 +33,17 @@ public class NurseryTest {
 
 
         // An example of one or more threads failing
-        Nursery.open((Nursery nursery) -> {
-            nursery.start(NurseryTest::exceptionThrower);
-            nursery.start(NurseryTest::exceptionThrower);
-            nursery.start(NurseryTest::exceptionThrower);
-            nursery.start(NurseryTest::exceptionThrower);
-            nursery.start(NurseryTest::exceptionThrower);
-        });
+        try {
+            Nursery.open((Nursery nursery) -> {
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+                nursery.start(NurseryTest::exceptionThrower);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static int intSupplier() {
@@ -47,7 +53,6 @@ public class NurseryTest {
             try {
                 Thread.sleep(1); // The illusion of working hard
             } catch (InterruptedException e) {
-                e.printStackTrace();
                 return -1;
             }
         }
@@ -56,7 +61,7 @@ public class NurseryTest {
 
     private static void exceptionThrower() {
         try {
-            Thread.sleep(1000);
+            Thread.sleep(new Random().nextInt(2000));
         } catch (InterruptedException e) {
             return;
         }
