@@ -5,7 +5,7 @@ The basic idea is that control flow enters a nursery and continues under it afte
 
 As you can see below in the example code, child threads can even arbitrarily spawn new threads themselves without breaking the control flow, by passing down the nursery object to the called functions. This is safe as long as the Nursery object itself doesn't leak outside the nursery scope, which should not be possible as long as it's only passed along to children within the nursery, and no other concurrency primitive is used within the nursery scope.
 
-To be able to use any results of the child threads non-statically a child thread can be started with a Supplier\<T\> instead of a Runnable, and the result becomes available in a blocking asynchronous data structure which can be accessed withing the nursery scope. The scope itself can also return any type of value as a result of the computations taking place inside which becomes available as soon as the scope collapses.
+To be able to use any results of the child threads non-statically a child thread can be started with a Supplier\<T\> instead of a Runnable, and the result becomes available in a blocking asynchronous data structure which can be accessed within the nursery scope. The scope itself can also return any type of value as a result of the computations taking place inside which becomes available as soon as the scope collapses.
 
 ## Example usage
 ```java
