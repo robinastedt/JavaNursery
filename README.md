@@ -80,3 +80,66 @@ public class NurseryTest {
     }
 }
 ```
+
+### Example usage in Kotlin
+```kotlin
+import com.astedt.robin.util.concurrency.nursery.Nursery
+
+import java.util.Random
+
+fun openNursery(scope: Nursery.() -> Unit) = Nursery.open(scope)
+fun <T> openNursery(scope: Nursery.() -> T) = Nursery.open(scope)
+
+fun main(args: Array<String>) {
+
+    openNursery {
+        start { println("Inline test 1") }
+        start { println("Inline test 2") }
+    }
+
+    openNursery {
+        start {
+            start { println("Nested scopes test 1") }
+            start { println("Nested scopes test 2") }
+        }
+        start { println("Nested scopes test 3") }
+    }
+
+    // A Nursery can also store results from children, and then work on them asynchronously
+    // If there's some result to be returned within the scope, it is also passed on as a result of the scope itself.
+    val result = openNursery<Int> {
+        val result1 = start<Int> { intSupplier() }
+        val result2 = start<Int> { intSupplier() }
+
+        // The result of the children can not be accessed until it's finished.
+        // The get function of the AsynchronousReference blocks until the result becomes available
+        result1.get() + result2.get()
+    }
+    println(result)
+
+
+    // An example of one or more threads failing
+    try {
+        openNursery {
+            start { exceptionThrower() }
+            start { exceptionThrower() }
+            start { exceptionThrower() }
+            start { exceptionThrower() }
+            start { exceptionThrower() }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+// Returns 499500
+private fun intSupplier() = (0 until 1000).sumBy {
+    Thread.sleep(1) // The illusion of working hard
+    it
+}
+
+private fun exceptionThrower() {
+    Thread.sleep(Random().nextInt(2000).toLong())
+    throw NullPointerException()
+}
+```
