@@ -1,0 +1,6 @@
+# Gitignore
+
+# IDEA & Gradle files
+.idea
+.gradle
+out/
