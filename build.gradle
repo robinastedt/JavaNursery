@@ -1,0 +1,8 @@
+group 'com.astedt.robin.util.concurrency'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+repositories {}
+
+dependencies {}
